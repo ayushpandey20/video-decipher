@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Extreme Video Decipher | Cosmic Insights</title>
+    <!-- Fonts matching the modern cosmic aesthetic -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&family=Playfair+Display:ital,wght@0,600;1,400&display=swap" rel="stylesheet">
+    <!-- html2pdf library for PDF export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <link rel="stylesheet" href="style.css?v=3.0">
+</head>
+<body>
+    
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <div class="logo-area">
+            <span class="logo-icon">💫</span>
+            <span class="logo-text">EXTREME</span>
+        </div>
+        <ul class="nav-links">
+            <li><a href="#home">HOME</a></li>
+            <li><a href="#about">ABOUT US</a></li>
+        </ul>
+        <button id="downloadPdfBtn" class="pdf-btn">PDF DOWNLOAD</button>
+    </nav>
+
+    <!-- Hero Section -->
+    <header class="hero" id="home" style="background-image: url('/images.jpg');">
+        <div class="hero-overlay"></div>
+        <div class="hero-content">
+            <p class="hero-pretitle">Astro-Analytics</p>
+            <h1 class="hero-title">LET'S DECIPHER</h1>
+            
+            <div class="decipher-card">
+                <div class="input-wrapper">
+                    <input type="text" id="videoUrl" placeholder="Paste YouTube Video URL here..." />
+                    <button id="decipherBtn" class="decipher-main-btn">ANALYZE VIDEO</button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main>
+        <!-- Loading Spinner -->
+        <div id="loadingSpinner" class="spinner-section hidden">
+            <div class="container">
+                <div class="pulse-orbit"></div>
+                <p>Decoding temporal video stream...</p>
+            </div>
+        </div>
+
+        <!-- Result Section -->
+        <section id="results" class="results-section hidden">
+            <div class="container">
+                <div class="glass-result-card">
+                    <div class="result-header">
+                        <h2>ANALYTICAL BREAKDOWN</h2>
+                        <span class="status-badge">COMPLETE</span>
+                    </div>
+                    <div id="resultText" class="result-text"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Information / About Section -->
+        <section id="about" class="info-section">
+            <div class="container">
+                <h2 class="section-title serif">POWER OF INSIGHTS GUARANTEED<br><span class="glow-text">FEEL EXTREMELY</span></h2>
+                <p class="section-subtitle">Discover the core message of any timeline. Our deep-space analysis engine cuts through the noise to deliver instant video intelligence. Precise, efficient, extreme.</p>
+            </div>
+        </section>
+    </main>
+
+    <script src="app.js?v=3.0"></script>
+</body>
+</html>

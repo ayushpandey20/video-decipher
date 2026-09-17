@@ -46,8 +46,8 @@ public class DecipherController {
                 )
             );
 
-            // Updated model string from retired gemini-1.5-flash to gemini-2.5-flash
-            String endpoint = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=" + key.trim();
+            // Correct model (gemini-3.6-flash) combined with query authentication (?key=)
+            String endpoint = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=" + key.trim();
 
             Map<?, ?> response = restClient.post()
                     .uri(endpoint)

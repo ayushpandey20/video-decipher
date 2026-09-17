@@ -36,17 +36,18 @@ public class DecipherController {
         }
 
         try {
+            // Pass YouTube URL as a file_data URI object so Gemini ingests the video directly
             Map<String, Object> requestBody = Map.of(
                 "contents", List.of(
                     Map.of(
                         "parts", List.of(
-                            Map.of("text", "Analyze and summarize the key insights and main topics from this YouTube video URL: " + videoUrl.trim())
+                            Map.of("text", "Analyze and summarize the key insights and main topics from this video:"),
+                            Map.of("file_data", Map.of("file_uri", videoUrl.trim()))
                         )
                     )
                 )
             );
 
-            // Correct model (gemini-3.6-flash) combined with query authentication (?key=)
             String endpoint = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=" + key.trim();
 
             Map<?, ?> response = restClient.post()

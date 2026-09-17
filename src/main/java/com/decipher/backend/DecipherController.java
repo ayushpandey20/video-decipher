@@ -36,23 +36,22 @@ public class DecipherController {
         }
 
         try {
-            // Structuring YouTube URL as a file_data object rather than plain text
+            // Structuring request body for Gemini API using text prompt
             Map<String, Object> requestBody = Map.of(
                 "contents", List.of(
                     Map.of(
                         "parts", List.of(
-                            Map.of("text", "Analyze and summarize the key insights and main topics from this video:"),
-                            Map.of("file_data", Map.of("file_uri", videoUrl.trim()))
+                            Map.of("text", "Analyze and summarize the key insights and main topics from this YouTube video URL: " + videoUrl.trim())
                         )
                     )
                 )
             );
 
-            String endpoint = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent";
+            // Using valid gemini-1.5-flash model and passing API key in query param
+            String endpoint = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" + key.trim();
 
             Map<?, ?> response = restClient.post()
                     .uri(endpoint)
-                    .header("x-goog-api-key", key.trim())
                     .contentType(MediaType.APPLICATION_JSON)
                     .body(requestBody)
                     .retrieve()

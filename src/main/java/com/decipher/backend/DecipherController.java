@@ -36,7 +36,6 @@ public class DecipherController {
         }
 
         try {
-            // Structuring request body for Gemini API using text prompt
             Map<String, Object> requestBody = Map.of(
                 "contents", List.of(
                     Map.of(
@@ -47,8 +46,8 @@ public class DecipherController {
                 )
             );
 
-            // Using valid gemini-1.5-flash model and passing API key in query param
-            String endpoint = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" + key.trim();
+            // Updated model string from retired gemini-1.5-flash to gemini-2.5-flash
+            String endpoint = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=" + key.trim();
 
             Map<?, ?> response = restClient.post()
                     .uri(endpoint)

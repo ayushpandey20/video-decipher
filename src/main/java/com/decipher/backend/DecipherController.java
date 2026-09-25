@@ -14,8 +14,12 @@ import java.util.Map;
 @CrossOrigin(origins = "*")
 public class DecipherController {
 
+    // Automatically pulls key from application.properties (GEMINI_API_KEY or gemini.api.key)
     @Value("${GEMINI_API_KEY:}")
-    private String apiKeyProperty;
+    private String apiKeyUpperProperty;
+
+    @Value("${gemini.api.key:}")
+    private String apiKeyLowerProperty;
 
     private final RestClient restClient = RestClient.builder().build();
 
@@ -27,15 +31,14 @@ public class DecipherController {
             return ResponseEntity.ok(Map.of("response", "[ERROR]: Video URL or prompt cannot be empty."));
         }
 
-        String key = (apiKeyProperty != null && !apiKeyProperty.isBlank()) 
-                ? apiKeyProperty 
-                : System.getenv("GEMINI_API_KEY");
+        // 1. Resolve key dynamically from application.properties or environment variables
+        String key = resolveKey();
 
         if (key == null || key.isBlank()) {
-            return ResponseEntity.ok(Map.of("response", "[SYSTEM ERROR]: GEMINI_API_KEY is missing."));
+            return ResponseEntity.ok(Map.of("response", "[SYSTEM ERROR]: GEMINI_API_KEY is missing from application.properties or environment."));
         }
 
-        // Sanitize key (strip accidental quotes or surrounding spaces)
+        // 2. Sanitize key (removes trailing spaces or accidental surrounding quotes)
         String cleanKey = key.trim().replaceAll("^\"|\"$", "");
 
         try {
@@ -50,20 +53,24 @@ public class DecipherController {
                 )
             );
 
-            // Determine if token is OAuth (AQ / ya29) vs standard key
-            boolean isOAuth = cleanKey.startsWith("AQ") || cleanKey.startsWith("ya29");
-            
-            String endpointUrl = isOAuth
-                    ? "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent"
-                    : "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=" + cleanKey;
+            // 3. Detect if key is an AQ / OAuth access token vs standard API key
+            boolean isOAuthToken = cleanKey.startsWith("AQ") || cleanKey.startsWith("ya29");
 
-            // Construct RestClient request with uri set first
+            // Standard Gemini API endpoint
+            String endpointUrl = isOAuthToken
+                    ? "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent"
+                    : "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" + cleanKey;
+
+            // 4. Construct RestClient request (.uri must be called first for valid Maven compilation)
             RestClient.RequestBodySpec requestSpec = restClient.post()
                     .uri(endpointUrl)
                     .contentType(MediaType.APPLICATION_JSON);
 
-            if (isOAuth) {
+            if (isOAuthToken) {
+                // AQ OAuth access tokens MUST use Bearer authorization
                 requestSpec.header("Authorization", "Bearer " + cleanKey);
+            } else {
+                requestSpec.header("x-goog-api-key", cleanKey);
             }
 
             Map<?, ?> response = requestSpec
@@ -81,6 +88,16 @@ public class DecipherController {
             e.printStackTrace();
             return ResponseEntity.ok(Map.of("response", "[SYSTEM ERROR]: " + e.getMessage()));
         }
+    }
+
+    private String resolveKey() {
+        if (apiKeyUpperProperty != null && !apiKeyUpperProperty.isBlank()) {
+            return apiKeyUpperProperty;
+        }
+        if (apiKeyLowerProperty != null && !apiKeyLowerProperty.isBlank()) {
+            return apiKeyLowerProperty;
+        }
+        return System.getenv("GEMINI_API_KEY");
     }
 
     private String extractResponseText(Map<?, ?> response) {

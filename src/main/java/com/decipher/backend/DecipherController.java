@@ -5,6 +5,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestClient;
+import org.springframework.web.client.RestClientResponseException;
 
 import java.util.List;
 import java.util.Map;
@@ -32,14 +33,13 @@ public class DecipherController {
         String key = resolveKey();
 
         if (key == null || key.isBlank()) {
-            return ResponseEntity.ok(Map.of("response", "[SYSTEM ERROR]: GEMINI_API_KEY is missing from application.properties or environment."));
+            return ResponseEntity.ok(Map.of("response", "[SYSTEM ERROR]: GEMINI_API_KEY is missing from environment."));
         }
 
         String cleanKey = key.trim().replaceAll("^\"|\"$", "");
 
         try {
-            // Include YouTube URL directly in the text prompt (prevents 400 Bad Request on file_data)
-            String promptText = "Analyze and provide a concise, structured summary with key takeaways and main points for this YouTube video: " + videoUrl.trim();
+            String promptText = "Provide a clear structured summary with key takeaways and bullet points for this video topic or link: " + videoUrl.trim();
 
             Map<String, Object> requestBody = Map.of(
                 "contents", List.of(
@@ -56,7 +56,6 @@ public class DecipherController {
             Map<?, ?> response = restClient.post()
                     .uri(endpointUrl)
                     .contentType(MediaType.APPLICATION_JSON)
-                    .header("x-goog-api-key", cleanKey)
                     .body(requestBody)
                     .retrieve()
                     .body(Map.class);
@@ -64,17 +63,12 @@ public class DecipherController {
             String aiResponse = extractResponseText(response);
             return ResponseEntity.ok(Map.of("response", aiResponse));
 
+        } catch (RestClientResponseException e) {
+            e.printStackTrace();
+            return ResponseEntity.ok(Map.of("response", "[GEMINI API ERROR " + e.getStatusCode() + "]: " + e.getResponseBodyAsString()));
         } catch (Exception e) {
             e.printStackTrace();
-            
-            String fallbackSummary = """
-                ### Video Key Takeaways & Summary
-                
-                • **Core Architectural Overview**: Comprehensive synthesis of key concepts, system design, and practical methodologies presented in the video.
-                • **Main Insights**: Detailed evaluation of core operational workflows, performance considerations, and implementation strategies.
-                • **Key Conclusion**: Technical takeaways and actionable recommendations for project integration.
-                """;
-            return ResponseEntity.ok(Map.of("response", fallbackSummary));
+            return ResponseEntity.ok(Map.of("response", "[SYSTEM ERROR]: " + e.getMessage()));
         }
     }
 

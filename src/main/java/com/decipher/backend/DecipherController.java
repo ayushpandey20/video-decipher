@@ -35,8 +35,10 @@ public class DecipherController {
             return ResponseEntity.ok(Map.of("response", "[SYSTEM ERROR]: GEMINI_API_KEY is missing."));
         }
 
+        // Sanitize key (strip accidental quotes or surrounding spaces)
+        String cleanKey = key.trim().replaceAll("^\"|\"$", "");
+
         try {
-            // Pass YouTube URL as a file_data URI object so Gemini ingests the video directly
             Map<String, Object> requestBody = Map.of(
                 "contents", List.of(
                     Map.of(
@@ -48,10 +50,19 @@ public class DecipherController {
                 )
             );
 
-            String endpoint = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=" + key.trim();
+            // Dynamically construct request based on AQ token vs standard key
+            RestClient.RequestBodySpec requestSpec = restClient.post();
 
-            Map<?, ?> response = restClient.post()
-                    .uri(endpoint)
+            if (cleanKey.startsWith("AQ") || cleanKey.startsWith("ya29")) {
+                // AQ OAuth tokens MUST use Bearer authorization header without ?key= parameter
+                requestSpec.uri("https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent")
+                           .header("Authorization", "Bearer " + cleanKey);
+            } else {
+                // Standard API keys pass via query parameter
+                requestSpec.uri("https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=" + cleanKey);
+            }
+
+            Map<?, ?> response = requestSpec
                     .contentType(MediaType.APPLICATION_JSON)
                     .body(requestBody)
                     .retrieve()

@@ -14,7 +14,6 @@ import java.util.Map;
 @CrossOrigin(origins = "*")
 public class DecipherController {
 
-    // Automatically pulls key from application.properties (GEMINI_API_KEY or gemini.api.key)
     @Value("${GEMINI_API_KEY:}")
     private String apiKeyUpperProperty;
 
@@ -38,7 +37,7 @@ public class DecipherController {
             return ResponseEntity.ok(Map.of("response", "[SYSTEM ERROR]: GEMINI_API_KEY is missing from application.properties or environment."));
         }
 
-        // 2. Sanitize key (removes trailing spaces or accidental surrounding quotes)
+        // 2. Sanitize key (strip quotes or surrounding whitespace)
         String cleanKey = key.trim().replaceAll("^\"|\"$", "");
 
         try {
@@ -53,27 +52,14 @@ public class DecipherController {
                 )
             );
 
-            // 3. Detect if key is an AQ / OAuth access token vs standard API key
-            boolean isOAuthToken = cleanKey.startsWith("AQ") || cleanKey.startsWith("ya29");
+            // 3. Standard Gemini Endpoint with query parameter
+            String endpointUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" + cleanKey;
 
-            // Standard Gemini API endpoint
-            String endpointUrl = isOAuthToken
-                    ? "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent"
-                    : "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" + cleanKey;
-
-            // 4. Construct RestClient request (.uri must be called first for valid Maven compilation)
-            RestClient.RequestBodySpec requestSpec = restClient.post()
+            // 4. Send request using official x-goog-api-key header (works for AQ and AIza keys)
+            Map<?, ?> response = restClient.post()
                     .uri(endpointUrl)
-                    .contentType(MediaType.APPLICATION_JSON);
-
-            if (isOAuthToken) {
-                // AQ OAuth access tokens MUST use Bearer authorization
-                requestSpec.header("Authorization", "Bearer " + cleanKey);
-            } else {
-                requestSpec.header("x-goog-api-key", cleanKey);
-            }
-
-            Map<?, ?> response = requestSpec
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .header("x-goog-api-key", cleanKey)
                     .body(requestBody)
                     .retrieve()
                     .body(Map.class);

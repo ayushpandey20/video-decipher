@@ -50,20 +50,23 @@ public class DecipherController {
                 )
             );
 
-            // Dynamically construct request based on AQ token vs standard key
-            RestClient.RequestBodySpec requestSpec = restClient.post();
+            // Determine if token is OAuth (AQ / ya29) vs standard key
+            boolean isOAuth = cleanKey.startsWith("AQ") || cleanKey.startsWith("ya29");
+            
+            String endpointUrl = isOAuth
+                    ? "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent"
+                    : "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=" + cleanKey;
 
-            if (cleanKey.startsWith("AQ") || cleanKey.startsWith("ya29")) {
-                // AQ OAuth tokens MUST use Bearer authorization header without ?key= parameter
-                requestSpec.uri("https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent")
-                           .header("Authorization", "Bearer " + cleanKey);
-            } else {
-                // Standard API keys pass via query parameter
-                requestSpec.uri("https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=" + cleanKey);
+            // Construct RestClient request with uri set first
+            RestClient.RequestBodySpec requestSpec = restClient.post()
+                    .uri(endpointUrl)
+                    .contentType(MediaType.APPLICATION_JSON);
+
+            if (isOAuth) {
+                requestSpec.header("Authorization", "Bearer " + cleanKey);
             }
 
             Map<?, ?> response = requestSpec
-                    .contentType(MediaType.APPLICATION_JSON)
                     .body(requestBody)
                     .retrieve()
                     .body(Map.class);

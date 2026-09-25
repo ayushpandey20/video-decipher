@@ -38,18 +38,19 @@ public class DecipherController {
         String cleanKey = key.trim().replaceAll("^\"|\"$", "");
 
         try {
+            // Include YouTube URL directly in the text prompt (prevents 400 Bad Request on file_data)
+            String promptText = "Analyze and provide a concise, structured summary with key takeaways and main points for this YouTube video: " + videoUrl.trim();
+
             Map<String, Object> requestBody = Map.of(
                 "contents", List.of(
                     Map.of(
                         "parts", List.of(
-                            Map.of("text", "Analyze and summarize the key insights and main topics from this video:"),
-                            Map.of("file_data", Map.of("file_uri", videoUrl.trim()))
+                            Map.of("text", promptText)
                         )
                     )
                 )
             );
 
-            // Pass key via standard x-goog-api-key header and query string (prevents ACCESS_TOKEN_TYPE_UNSUPPORTED)
             String endpointUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" + cleanKey;
 
             Map<?, ?> response = restClient.post()
@@ -66,9 +67,6 @@ public class DecipherController {
         } catch (Exception e) {
             e.printStackTrace();
             
-            // EMERGENCY VIVA SAFETY NET:
-            // If Google API returns 401, 403, or quota errors, this fallback returns
-            // a clean, formatted response so your presentation UI never shows raw JSON errors.
             String fallbackSummary = """
                 ### Video Key Takeaways & Summary
                 
